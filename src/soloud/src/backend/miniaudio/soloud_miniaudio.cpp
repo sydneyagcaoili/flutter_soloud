@@ -38,75 +38,75 @@ namespace SoLoud
 #else
 
 #define MINIAUDIO_IMPLEMENTATION
-// // #define MA_NO_NULL
-// #define MA_NO_DECODING
-// #define MA_NO_WAV
-// #define MA_NO_FLAC
-// #define MA_NO_MP3
-// #define MA_NO_AUTOINITIALIZATION
-// #define MA_NO_VORBIS
-// #define MA_NO_OPUS
-#define MA_NO_MIDI
+// // #define SOLOUD_MA_NO_NULL
+// #define SOLOUD_MA_NO_DECODING
+// #define SOLOUD_MA_NO_WAV
+// #define SOLOUD_MA_NO_FLAC
+// #define SOLOUD_MA_NO_MP3
+// #define SOLOUD_MA_NO_AUTOINITIALIZATION
+// #define SOLOUD_MA_NO_VORBIS
+// #define SOLOUD_MA_NO_OPUS
+#define SOLOUD_MA_NO_MIDI
 
 // Seems that on miniaudio there is still an issue when uninitializing the device
 // addressed by this issue: https://github.com/mackron/miniaudio/issues/466
 // For me this happens using AAudio on android <= 10 (but not on Samsung Galaxy S9+).
 // Disablig AAudio in favor of OpenSL is a workaround to prevent the crash.
 #if defined(__ANDROID__) && (__ANDROID_API__ <= 29)
-#define MA_NO_AAUDIO
+#define SOLOUD_MA_NO_AAUDIO
 #endif
-// #define MA_DEBUG_OUTPUT
+// #define SOLOUD_MA_DEBUG_OUTPUT
 #include "miniaudio.h"
 #include <math.h>
 
 namespace SoLoud
 {
-    ma_device gDevice;
+    soloud_ma_device gDevice;
     SoLoud::Soloud *soloud;
-    ma_context context;
+    soloud_ma_context context;
 
     // Added by Marco Bavagnoli
-    void on_notification(const ma_device_notification* pNotification)
+    void on_notification(const soloud_ma_device_notification* pNotification)
     {
-        MA_ASSERT(pNotification != NULL);
+        SOLOUD_MA_ASSERT(pNotification != NULL);
         if (soloud->_stateChangedCallback == nullptr)
             return;
 
         switch (pNotification->type)
         {
-            case ma_device_notification_type_started:
+            case soloud_ma_device_notification_type_started:
             {
                 soloud->_stateChangedCallback(0);
             }
             break;
 
-            case ma_device_notification_type_stopped:
+            case soloud_ma_device_notification_type_stopped:
             {
                 soloud->_stateChangedCallback(1);
             } break;
 
-            case ma_device_notification_type_rerouted:
+            case soloud_ma_device_notification_type_rerouted:
             {
                 soloud->_stateChangedCallback(2);
             } break;
 
-            case ma_device_notification_type_interruption_began:
+            case soloud_ma_device_notification_type_interruption_began:
             {
                 soloud->_stateChangedCallback(3);
             } break;
 
-            case ma_device_notification_type_interruption_ended:
+            case soloud_ma_device_notification_type_interruption_ended:
             {
-#if defined(MA_HAS_COREAUDIO)
+#if defined(SOLOUD_MA_HAS_COREAUDIO)
                 // On macOS and iOS when the the interruption begins
-                // the device is automatically stopped (not uninited with ma_device_uninit).
+                // the device is automatically stopped (not uninited with soloud_ma_device_uninit).
                 // So we need to start it again when the interruption ends.
                 miniaudio_ensureDeviceStarted_impl();
 #endif
                 soloud->_stateChangedCallback(4);
             } break;
 
-            case ma_device_notification_type_unlocked:
+            case soloud_ma_device_notification_type_unlocked:
             {
                 soloud->_stateChangedCallback(5);
             } break;
@@ -115,7 +115,7 @@ namespace SoLoud
         }
     }
 
-    void soloud_miniaudio_audiomixer(ma_device* pDevice, void* pOutput, const void* pInput, ma_uint32 frameCount)
+    void soloud_miniaudio_audiomixer(soloud_ma_device* pDevice, void* pOutput, const void* pInput, soloud_ma_uint32 frameCount)
     {
         SoLoud::Soloud *soloud = (SoLoud::Soloud *)pDevice->pUserData;
         soloud->mix((float *)pOutput, frameCount);
@@ -123,52 +123,52 @@ namespace SoLoud
 
     static void soloud_miniaudio_deinit(SoLoud::Soloud *aSoloud)
     {
-        ma_device_stop(&gDevice);
-        ma_device_uninit(&gDevice);
-#if defined(MA_HAS_COREAUDIO)
-        ma_context_uninit(&context);
+        soloud_ma_device_stop(&gDevice);
+        soloud_ma_device_uninit(&gDevice);
+#if defined(SOLOUD_MA_HAS_COREAUDIO)
+        soloud_ma_context_uninit(&context);
 #endif
     }
 
     result miniaudio_init(SoLoud::Soloud *aSoloud, unsigned int aFlags, unsigned int aSamplerate, unsigned int aBuffer, unsigned int aChannels, void *pPlaybackInfos_id)
     {
         soloud = aSoloud;
-        ma_device_config deviceConfig = ma_device_config_init(ma_device_type_playback);
+        soloud_ma_device_config deviceConfig = soloud_ma_device_config_init(soloud_ma_device_type_playback);
         if (pPlaybackInfos_id != NULL)
         {
-            deviceConfig.playback.pDeviceID = (ma_device_id*)pPlaybackInfos_id;
+            deviceConfig.playback.pDeviceID = (soloud_ma_device_id*)pPlaybackInfos_id;
         }
         deviceConfig.periodSizeInFrames = aBuffer;
-        deviceConfig.playback.format    = ma_format_f32;
+        deviceConfig.playback.format    = soloud_ma_format_f32;
         deviceConfig.playback.channels  = aChannels;
         deviceConfig.sampleRate         = aSamplerate;
         deviceConfig.dataCallback       = soloud_miniaudio_audiomixer;
         deviceConfig.pUserData          = (void *)aSoloud;
 
-        // deviceConfig.aaudio.usage       = ma_aaudio_usage_default;
-        // deviceConfig.aaudio.contentType = ma_aaudio_content_type_default;
-        // deviceConfig.aaudio.inputPreset = ma_aaudio_input_preset_default;
+        // deviceConfig.aaudio.usage       = soloud_ma_aaudio_usage_default;
+        // deviceConfig.aaudio.contentType = soloud_ma_aaudio_content_type_default;
+        // deviceConfig.aaudio.inputPreset = soloud_ma_aaudio_input_preset_default;
         if (aSoloud->_stateChangedCallback != nullptr)
             deviceConfig.notificationCallback = on_notification;
 
-#if defined(MA_HAS_COREAUDIO)
+#if defined(SOLOUD_MA_HAS_COREAUDIO)
         // Disable CoreAudio context
-        ma_context_config contextConfig = ma_context_config_init();
-        contextConfig.coreaudio.sessionCategory = ma_ios_session_category_none;
+        soloud_ma_context_config contextConfig = soloud_ma_context_config_init();
+        contextConfig.coreaudio.sessionCategory = soloud_ma_ios_session_category_none;
         contextConfig.coreaudio.noAudioSessionActivate = true;
         contextConfig.coreaudio.noAudioSessionDeactivate = true;
 
-        ma_result result = ma_context_init(NULL, 0, &contextConfig, &context);
-        if (result != MA_SUCCESS) {
+        soloud_ma_result result = soloud_ma_context_init(NULL, 0, &contextConfig, &context);
+        if (result != SOLOUD_MA_SUCCESS) {
             return UNKNOWN_ERROR;
         }
-        if (ma_device_init(&context, &deviceConfig, &gDevice) != MA_SUCCESS)
+        if (soloud_ma_device_init(&context, &deviceConfig, &gDevice) != SOLOUD_MA_SUCCESS)
         {
-            ma_context_uninit(&context);
+            soloud_ma_context_uninit(&context);
             return UNKNOWN_ERROR;
         }
 #else
-        if (ma_device_init(NULL, &deviceConfig, &gDevice) != MA_SUCCESS)
+        if (soloud_ma_device_init(NULL, &deviceConfig, &gDevice) != SOLOUD_MA_SUCCESS)
         {
             return UNKNOWN_ERROR;
         }
@@ -179,7 +179,7 @@ namespace SoLoud
 
         aSoloud->mBackendCleanupFunc = soloud_miniaudio_deinit;
 
-        ma_device_start(&gDevice);
+        soloud_ma_device_start(&gDevice);
         aSoloud->mBackendString = "MiniAudio";
         return 0;
     }
@@ -189,26 +189,26 @@ namespace SoLoud
         if (soloud == nullptr)
             return UNKNOWN_ERROR;
 
-        ma_device_uninit(&gDevice);
-        ma_device_config deviceConfig = ma_device_config_init(ma_device_type_playback);
-        deviceConfig.playback.pDeviceID = (ma_device_id *)pPlaybackInfos_id;
+        soloud_ma_device_uninit(&gDevice);
+        soloud_ma_device_config deviceConfig = soloud_ma_device_config_init(soloud_ma_device_type_playback);
+        deviceConfig.playback.pDeviceID = (soloud_ma_device_id *)pPlaybackInfos_id;
         deviceConfig.periodSizeInFrames = soloud->mBufferSize;
-        deviceConfig.playback.format    = ma_format_f32;
+        deviceConfig.playback.format    = soloud_ma_format_f32;
         deviceConfig.playback.channels  = soloud->mChannels;
         deviceConfig.sampleRate         = soloud->mSamplerate;
         deviceConfig.dataCallback       = soloud_miniaudio_audiomixer;
         deviceConfig.pUserData          = (void *)soloud;
-        if (ma_device_init(NULL, &deviceConfig, &gDevice) != MA_SUCCESS)
+        if (soloud_ma_device_init(NULL, &deviceConfig, &gDevice) != SOLOUD_MA_SUCCESS)
         {
             return UNKNOWN_ERROR;
         }
-        ma_device_start(&gDevice);
+        soloud_ma_device_start(&gDevice);
         return 0;
     }
 
     // Added to ensure miniaudio device is started when needed, ie by an interruption.
     // On macOS and iOS when an interruption begins (ie anothe app needs the audio context),
-    // the device is automatically stopped (not uninited with ma_device_uninit).
+    // the device is automatically stopped (not uninited with soloud_ma_device_uninit).
     // So we need to check if the device is stopped and start it again.
     result miniaudio_ensureDeviceStarted_impl()
     {
@@ -216,10 +216,10 @@ namespace SoLoud
             return UNKNOWN_ERROR;
 
         // Check if device is stopped and start it if needed
-        if (ma_device_get_state(&gDevice) == ma_device_state_stopped)
+        if (soloud_ma_device_get_state(&gDevice) == soloud_ma_device_state_stopped)
         {
-            ma_result result = ma_device_start(&gDevice);
-            if (result != MA_SUCCESS)
+            soloud_ma_result result = soloud_ma_device_start(&gDevice);
+            if (result != SOLOUD_MA_SUCCESS)
             {
                 return UNKNOWN_ERROR;
             }

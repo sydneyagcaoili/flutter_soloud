@@ -12,33 +12,33 @@
 namespace Waveform
 {
     ReadSamplesErrors readSamplesFromDecoder(
-        ma_decoder *decoder,
+        soloud_ma_decoder *decoder,
         float startTime,
         float endTime,
         unsigned long numSamplesNeeded,
         bool average,
         float *pSamples)
     {
-        ma_uint32 sampleRate = decoder->outputSampleRate;
-        ma_uint32 channels = decoder->outputChannels;
+        soloud_ma_uint32 sampleRate = decoder->outputSampleRate;
+        soloud_ma_uint32 channels = decoder->outputChannels;
 
         // Calculate start and end frames based on startTime and endTime
-        ma_uint64 startFrame = (ma_uint64)(startTime * sampleRate);
-        ma_uint64 endFrame;
+        soloud_ma_uint64 startFrame = (soloud_ma_uint64)(startTime * sampleRate);
+        soloud_ma_uint64 endFrame;
         if (endTime == -1)
-            ma_decoder_get_length_in_pcm_frames(decoder, &endFrame);
+            soloud_ma_decoder_get_length_in_pcm_frames(decoder, &endFrame);
         else
-            endFrame = (ma_uint64)(endTime * sampleRate);
+            endFrame = (soloud_ma_uint64)(endTime * sampleRate);
             
-        ma_uint64 totalFrames = endFrame - startFrame;
-        ma_uint64 stepFrames = totalFrames / numSamplesNeeded;
+        soloud_ma_uint64 totalFrames = endFrame - startFrame;
+        soloud_ma_uint64 stepFrames = totalFrames / numSamplesNeeded;
 
         // Move decoder to start frame
-        ma_result result = ma_decoder_seek_to_pcm_frame(decoder, startFrame);
-        if (result != MA_SUCCESS)
+        soloud_ma_result result = soloud_ma_decoder_seek_to_pcm_frame(decoder, startFrame);
+        if (result != SOLOUD_MA_SUCCESS)
         {
             printf("Failed to seek to start time.\n");
-            ma_decoder_uninit(decoder);
+            soloud_ma_decoder_uninit(decoder);
             return failedToSeekPcm;
         }
 
@@ -48,13 +48,13 @@ namespace Waveform
         int id = 0;
         for (int i = 0; i < totalFrames; i += stepFrames, id++)
         {
-            ma_uint64 framesRead;
-            result = ma_decoder_read_pcm_frames(decoder, tempBuffer, stepFrames, &framesRead);
-            if (result != MA_SUCCESS && result != MA_AT_END)
+            soloud_ma_uint64 framesRead;
+            result = soloud_ma_decoder_read_pcm_frames(decoder, tempBuffer, stepFrames, &framesRead);
+            if (result != SOLOUD_MA_SUCCESS && result != SOLOUD_MA_AT_END)
             {
                 printf("Failed to read PCM frames.\n");
-                ma_decoder_uninit(decoder);
-                if (result != MA_AT_END)
+                soloud_ma_decoder_uninit(decoder);
+                if (result != SOLOUD_MA_AT_END)
                     return failedToReadPcmFrames;
             }
 
@@ -92,15 +92,15 @@ namespace Waveform
         // Clear memory
         memset(pSamples, 0, numSamplesNeeded * sizeof(float));
 
-        ma_decoder decoder;
-        ma_decoder_config decoderConfig = ma_decoder_config_init_default();
-        ma_result result;
+        soloud_ma_decoder decoder;
+        soloud_ma_decoder_config decoderConfig = soloud_ma_decoder_config_init_default();
+        soloud_ma_result result;
         bool isOgg = false;
 
 #if !defined(NO_OPUS_OGG_LIBS)
         // Create a static backend vtable to ensure it persists
-        static ma_decoding_backend_vtable* pCustomBackendVTables[] = {
-            ma_decoding_backend_libvorbis
+        static soloud_ma_decoding_backend_vtable* pCustomBackendVTables[] = {
+            soloud_ma_decoding_backend_libvorbis
         };
 #endif
 
@@ -140,45 +140,45 @@ namespace Waveform
         
         // Init the decoder with file or memory
         if (filePath != NULL)
-            result = ma_decoder_init_file(filePath, isOgg ? &decoderConfig : NULL, &decoder);
+            result = soloud_ma_decoder_init_file(filePath, isOgg ? &decoderConfig : NULL, &decoder);
         else
-            result = ma_decoder_init_memory(buffer, dataSize, isOgg ? &decoderConfig : NULL, &decoder);
+            result = soloud_ma_decoder_init_memory(buffer, dataSize, isOgg ? &decoderConfig : NULL, &decoder);
 
-        if (result != MA_SUCCESS)
+        if (result != SOLOUD_MA_SUCCESS)
         {
             printf("Failed to initialize decoder.\n");
             return noBackend;
         }
 
-        ma_uint32 sampleRate;
-        ma_uint32 channels;
-        ma_format format;
+        soloud_ma_uint32 sampleRate;
+        soloud_ma_uint32 channels;
+        soloud_ma_format format;
         // Get audio [sampleRate] and [channels]
-        result = ma_data_source_get_data_format(&decoder, &format, &channels, &sampleRate, NULL, 0);
-        if (result != MA_SUCCESS)
+        result = soloud_ma_data_source_get_data_format(&decoder, &format, &channels, &sampleRate, NULL, 0);
+        if (result != SOLOUD_MA_SUCCESS)
         {
             printf("Failed to retrieve decoder data format.");
-            ma_decoder_uninit(&decoder);
+            soloud_ma_decoder_uninit(&decoder);
             return failedToGetDataFormat;
         }
 
         // Re-initialize decoder with f32 format
-        if (format != ma_format_f32)
+        if (format != soloud_ma_format_f32)
         {
-            ma_decoder_uninit(&decoder);
+            soloud_ma_decoder_uninit(&decoder);
             
             // Update config with format settings
-            decoderConfig.format = ma_format_f32;
+            decoderConfig.format = soloud_ma_format_f32;
             decoderConfig.channels = channels;
             decoderConfig.sampleRate = sampleRate;
 
             // Re-init with updated config
             if (filePath != NULL)
-                result = ma_decoder_init_file(filePath, &decoderConfig, &decoder);
+                result = soloud_ma_decoder_init_file(filePath, &decoderConfig, &decoder);
             else
-                result = ma_decoder_init_memory(buffer, dataSize, &decoderConfig, &decoder);
+                result = soloud_ma_decoder_init_memory(buffer, dataSize, &decoderConfig, &decoder);
 
-            if (result != MA_SUCCESS)
+            if (result != SOLOUD_MA_SUCCESS)
             {
                 printf("Failed to initialize decoder forcing f32.\n");
                 return noBackend;
@@ -186,7 +186,7 @@ namespace Waveform
         }
 
         ReadSamplesErrors ret = readSamplesFromDecoder(&decoder, startTime, endTime, numSamplesNeeded, average, pSamples);
-        ma_decoder_uninit(&decoder);
+        soloud_ma_decoder_uninit(&decoder);
         return ret;
     }
 };
