@@ -33,6 +33,37 @@ Created a namespaced fork of `flutter_soloud` that prefixes all miniaudio symbol
 ### Automation Script
 - **namespace_miniaudio.py** - Python script that automates the namespacing process
 
+## Additional Fix: iOS Audio Codec Libraries
+
+After namespacing miniaudio symbols, a second issue appeared: missing Ogg/Opus/Vorbis codec symbols.
+
+### Problem
+```
+Error (Xcode): Undefined symbol: _ogg_page_bos
+Error (Xcode): Undefined symbol: _opus_decode_float
+Error (Xcode): Undefined symbol: _vorbis_synthesis
+... (39 total undefined symbols)
+```
+
+### Root Cause
+The `flutter_soloud.podspec` only included device libraries in `vendored_libraries`, but the linker flags referenced both device and simulator libraries. CocoaPods wasn't properly linking the simulator libraries.
+
+### Solution
+Updated `ios/flutter_soloud.podspec` to include both device and simulator libraries:
+
+```ruby
+s.ios.vendored_libraries = [
+  'libs/libopus_iOS-device.a',
+  'libs/libogg_iOS-device.a',
+  'libs/libvorbis_iOS-device.a',
+  'libs/libvorbisfile_iOS-device.a',
+  'libs/libopus_iOS-simulator.a',      # Added
+  'libs/libogg_iOS-simulator.a',       # Added
+  'libs/libvorbis_iOS-simulator.a',    # Added
+  'libs/libvorbisfile_iOS-simulator.a' # Added
+]
+```
+
 ## Git Repository Status
 
 **Branch:** `fix/namespace-miniaudio-symbols`
@@ -42,10 +73,12 @@ Created a namespaced fork of `flutter_soloud` that prefixes all miniaudio symbol
 2. Applied namespace changes to 5 core files (39,746 symbols + 15,970 macros)
 3. Added comprehensive documentation
 4. Fixed player.h and player.cpp namespace processing
+5. Fixed iOS podspec to include simulator audio codec libraries
 
 **Total Changes:**
 - 55,727 symbol/macro replacements
 - 7 C/C++ files modified
+- 1 iOS podspec configuration fix
 - 1 Python automation script created
 - Full documentation provided
 
