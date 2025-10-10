@@ -104,24 +104,24 @@ PlayerErrors Player::changeDevice(int deviceID)
 std::vector<PlaybackDevice> Player::listPlaybackDevices()
 {
     // printf("***************** LIST DEVICES START\n");
-    ma_context context;
-    ma_uint32 playbackCount;
-    ma_device_info *pCaptureInfos;
-    ma_uint32 captureCount;
+    soloud_ma_context context;
+    soloud_ma_uint32 playbackCount;
+    soloud_ma_device_info *pCaptureInfos;
+    soloud_ma_uint32 captureCount;
     std::vector<PlaybackDevice> ret;
-    ma_result result;
-    if ((result = ma_context_init(NULL, 0, NULL, &context)) != MA_SUCCESS)
+    soloud_ma_result result;
+    if ((result = soloud_ma_context_init(NULL, 0, NULL, &context)) != SOLOUD_MA_SUCCESS)
     {
         // Failed to initialize audio context.
         return ret;
     }
 
-    if ((result = ma_context_get_devices(
+    if ((result = soloud_ma_context_get_devices(
              &context,
              &pPlaybackInfos,
              &playbackCount,
              &pCaptureInfos,
-             &captureCount)) != MA_SUCCESS)
+             &captureCount)) != SOLOUD_MA_SUCCESS)
     {
         printf("Failed to get devices %d\n", result);
         return ret;
@@ -130,7 +130,7 @@ std::vector<PlaybackDevice> Player::listPlaybackDevices()
     // Loop over each device info and do something with it. Here we just print
     // the name with their index. You may want
     // to give the user the opportunity to choose which device they'd prefer.
-    for (ma_uint32 i = 0; i < playbackCount; i++)
+    for (soloud_ma_uint32 i = 0; i < playbackCount; i++)
     {
         // printf("######%s %d - %s\n",
         //        pPlaybackInfos[i].isDefault ? " X" : "-",

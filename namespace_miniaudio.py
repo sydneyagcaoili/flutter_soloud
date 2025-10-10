@@ -21,6 +21,9 @@ FILES_TO_PROCESS = [
     "src/waveform/waveform.cpp",
     "src/waveform/miniaudio_libvorbis.h",
     "src/waveform/miniaudio_libvorbis.cpp",
+    # Player files that reference miniaudio types
+    "src/player.h",
+    "src/player.cpp",
 ]
 
 def namespace_file(filepath):

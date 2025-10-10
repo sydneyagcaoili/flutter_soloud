@@ -619,7 +619,7 @@ public:
     unsigned int mChannels;
 
 private:
-    ma_device_info *pPlaybackInfos;
+    soloud_ma_device_info *pPlaybackInfos;
     std::mutex remove_handle_mutex;
     unsigned int mBufferSize;
 };
