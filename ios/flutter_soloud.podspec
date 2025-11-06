@@ -39,7 +39,7 @@ Flutter audio plugin using SoLoud library and FFI
   ]
 
   # Flutter.framework does not contain a i386 slice.
-  s.pod_target_xcconfig = { 
+  s.pod_target_xcconfig = {
     'HEADER_SEARCH_PATHS' => [
       '$(PODS_TARGET_SRCROOT)/include',
       '$(PODS_TARGET_SRCROOT)/include/opus',
@@ -50,7 +50,7 @@ Flutter audio plugin using SoLoud library and FFI
       '${PODS_ROOT}/abseil',
     ],
     'GCC_PREPROCESSOR_DEFINITIONS' => preprocessor_definitions.join(' '),
-    'DEFINES_MODULE' => 'YES', 
+    'DEFINES_MODULE' => 'YES',
     'VALID_ARCHS' => 'arm64 x86_64',
     'LIBRARY_SEARCH_PATHS' => [
       '$(PODS_TARGET_SRCROOT)/libs',
@@ -59,7 +59,11 @@ Flutter audio plugin using SoLoud library and FFI
     'OTHER_LDFLAGS[sdk=iphonesimulator*]' => disable_opus_ogg ? '' : '-logg_iOS-simulator -lopus_iOS-simulator -lvorbis_iOS-simulator -lvorbisfile_iOS-simulator -lflac_iOS-simulator',
     'OTHER_LDFLAGS[sdk=iphoneos*]' => disable_opus_ogg ? '' : '-logg_iOS-device -lopus_iOS-device -lvorbis_iOS-device -lvorbisfile_iOS-device -lflac_iOS-device',
     "CLANG_CXX_LANGUAGE_STANDARD" => "c++17",
-    "CLANG_CXX_LIBRARY" => "libc++"
+    "CLANG_CXX_LIBRARY" => "libc++",
+    # Preserve FFI symbols in release builds - critical for flutter_soloud to work
+    'STRIP_STYLE' => 'non-global',
+    'DEAD_CODE_STRIPPING' => 'NO',
+    'DEPLOYMENT_POSTPROCESSING' => 'NO'
   }
   
   # Only include libraries if opus/ogg is enabled
@@ -68,7 +72,7 @@ Flutter audio plugin using SoLoud library and FFI
       'libs/libopus_iOS-device.a',
       'libs/libogg_iOS-device.a',
       'libs/libvorbis_iOS-device.a',
-      'libs/libflac_iOS-device.a'
+      'libs/libflac_iOS-device.a',
       'libs/libvorbisfile_iOS-device.a',
       'libs/libopus_iOS-simulator.a',
       'libs/libogg_iOS-simulator.a',

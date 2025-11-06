@@ -63,7 +63,8 @@ Your iOS build should now complete successfully without the 988 duplicate symbol
 |--------|-------|
 | Duplicate Symbols Fixed | 988 |
 | Total Symbols Renamed | 55,727 |
-| Files Modified | 7 |
+| Files Modified | 7 C/C++ + 1 podspec |
+| iOS Library Linking | Fixed (Ogg/Opus/Vorbis) |
 | Build Time Impact | None (same performance) |
 | Functionality Impact | None (100% compatible) |
 
@@ -86,6 +87,9 @@ See [`NAMESPACE_SOLUTION_SUMMARY.md`](./NAMESPACE_SOLUTION_SUMMARY.md) for:
 
 **Problem**: Still getting duplicate symbol errors
 - **Solution**: Make sure you ran `flutter clean` and deleted `ios/Pods`
+
+**Problem**: Getting Ogg/Opus/Vorbis undefined symbol errors
+- **Solution**: This fork includes the fix! Make sure you're using the latest commit
 
 **Problem**: Can't find the fork on GitHub
 - **Solution**: Create a fork first at https://github.com/alnitak/flutter_soloud/fork
