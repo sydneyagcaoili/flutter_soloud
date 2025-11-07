@@ -77,6 +77,7 @@ Flutter audio plugin using SoLoud library and FFI
       'libs/libopus_iOS-simulator.a',
       'libs/libogg_iOS-simulator.a',
       'libs/libvorbis_iOS-simulator.a',
+      'libs/libflac_iOS-simulator.a',
       'libs/libvorbisfile_iOS-simulator.a'
     ]
     s.preserve_paths = [
